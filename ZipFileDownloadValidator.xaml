@@ -1,0 +1,340 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="ZipFileDownloadValidator" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib" xmlns:sd="clr-namespace:System.Diagnostics;assembly=System" xmlns:si="clr-namespace:System.IO;assembly=mscorlib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property sap2010:Annotation.AnnotationText="File Name with Extenstion - eg: abc.zip&#xA;Accessible Path - Either Relative / Absolute" Name="in_FileName" Type="InArgument(x:String)" />
+    <x:Property sap2010:Annotation.AnnotationText="Maximum Number of Seconds to Timeout when there ie no growth in the Part File Size. Be aware to give a bigger value for Larger Files since the download happens in Chunks there is a possibility that the next chunk may take few extra seconds to download" Name="in_MaxWaitingSeconds" Type="InArgument(x:Int32)" />
+    <x:Property sap2010:Annotation.AnnotationText="Returns a boolean indicating the success of the Download" Name="out_DownloadStatusFlag" Type="OutArgument(x:Boolean)" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  <sap:VirtualizedContainerService.HintSize>636,1056</sap:VirtualizedContainerService.HintSize>
+  <sap2010:WorkflowViewState.IdRef>ZipFileDownloadValidator_1</sap2010:WorkflowViewState.IdRef>
+  <TextExpression.NamespacesForImplementation>
+    <scg:List x:TypeArguments="x:String" Capacity="21">
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Activities.Expressions</x:String>
+      <x:String>System.Activities.Validation</x:String>
+      <x:String>System.Activities.XamlIntegration</x:String>
+      <x:String>Microsoft.VisualBasic</x:String>
+      <x:String>Microsoft.VisualBasic.Activities</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Data</x:String>
+      <x:String>System.Diagnostics</x:String>
+      <x:String>System.Drawing</x:String>
+      <x:String>System.IO</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>System.Net.Mail</x:String>
+      <x:String>System.Xml</x:String>
+      <x:String>System.Xml.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>System.Windows.Markup</x:String>
+    </scg:List>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <scg:List x:TypeArguments="AssemblyReference" Capacity="18">
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>System.Data</AssemblyReference>
+      <AssemblyReference>System.Data.DataSetExtensions</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Drawing</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Xml</AssemblyReference>
+      <AssemblyReference>System.Xml.Linq</AssemblyReference>
+      <AssemblyReference>PresentationFramework</AssemblyReference>
+      <AssemblyReference>WindowsBase</AssemblyReference>
+      <AssemblyReference>PresentationCore</AssemblyReference>
+      <AssemblyReference>System.Xaml</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.UiAutomation.Activities</AssemblyReference>
+      <AssemblyReference>System.ServiceModel</AssemblyReference>
+    </scg:List>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence sap2010:Annotation.AnnotationText="Caution : There are Trace Logs in Loop, please make sure to use Info Mode if you aren't debugging.&#xA;&#xA;Exception to Expect : Throws a File Not Found Exception if the Input File is not available&#xA;&#xA;" DisplayName="ZipFileDownloadValidator" sap:VirtualizedContainerService.HintSize="616,996" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="si:FileInfo" Name="inputFile" />
+      <Variable x:TypeArguments="si:FileInfo" Name="inputPartFile" />
+      <Variable x:TypeArguments="x:Double" Default="-1" Name="lengthOfPartFile" />
+      <Variable x:TypeArguments="x:Double" Name="prevLengthOfPartFile" />
+      <Variable x:TypeArguments="sd:Stopwatch" Name="inProgramTimer" />
+    </Sequence.Variables>
+    <sap:WorkflowViewStateService.ViewState>
+      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+        <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+        <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+      </scg:Dictionary>
+    </sap:WorkflowViewStateService.ViewState>
+    <ui:LogMessage DisplayName="Info Log pointing the Start of Module" sap:VirtualizedContainerService.HintSize="574,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_20" Level="Info" Message="[&quot;The Module Validate Zip File's Download Started&quot;]" />
+    <Assign DisplayName="Form a New File Variable for Input" sap:VirtualizedContainerService.HintSize="574,62" sap2010:WorkflowViewState.IdRef="Assign_1">
+      <Assign.To>
+        <OutArgument x:TypeArguments="si:FileInfo">[inputFile]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="si:FileInfo">[new FileInfo(in_FileName)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    <Assign DisplayName="Form a New File Variable for Path File" sap:VirtualizedContainerService.HintSize="574,62" sap2010:WorkflowViewState.IdRef="Assign_2">
+      <Assign.To>
+        <OutArgument x:TypeArguments="si:FileInfo">[inputPartFile]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="si:FileInfo">[new FileInfo(in_FileName+".part")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    <Assign DisplayName="Stop watch to monitor growth of Part File" sap:VirtualizedContainerService.HintSize="574,62" sap2010:WorkflowViewState.IdRef="Assign_3">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sd:Stopwatch">[inProgramTimer]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sd:Stopwatch">[new Stopwatch()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    <Pick DisplayName="Pick to Monitor Main File and growth fo the Part File - Times out when the Part file Stops growing for more than the Input Time" sap:VirtualizedContainerService.HintSize="574,98.6666666666667" sap2010:WorkflowViewState.IdRef="Pick_1">
+      <sap:WorkflowViewStateService.ViewState>
+        <scg:Dictionary x:TypeArguments="x:String, x:Object">
+          <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+          <x:Boolean x:Key="IsPinned">False</x:Boolean>
+        </scg:Dictionary>
+      </sap:WorkflowViewStateService.ViewState>
+      <PickBranch DisplayName="Branch - To Track Main File" sap:VirtualizedContainerService.HintSize="200,52.6666666666667" sap2010:WorkflowViewState.IdRef="PickBranch_1">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+        <PickBranch.Trigger>
+          <DoWhile DisplayName="Do While to Monitor main File" sap:VirtualizedContainerService.HintSize="484,597.333333333333" sap2010:WorkflowViewState.IdRef="DoWhile_2" Condition="[inputFile.Length=0]">
+            <Sequence DisplayName="Monitor Main File" sap:VirtualizedContainerService.HintSize="376,429.333333333333" sap2010:WorkflowViewState.IdRef="Sequence_9">
+              <sap:WorkflowViewStateService.ViewState>
+                <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                  <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                  <x:Boolean x:Key="IsPinned">False</x:Boolean>
+                </scg:Dictionary>
+              </sap:WorkflowViewStateService.ViewState>
+              <ui:LogMessage DisplayName="Trace Log Indicating start of Branch" sap:VirtualizedContainerService.HintSize="334,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_19" Level="Trace" Message="[&quot;Checking Main File&quot;]" />
+              <Assign DisplayName="Refresh the File" sap:VirtualizedContainerService.HintSize="334,62" sap2010:WorkflowViewState.IdRef="Assign_12">
+                <Assign.To>
+                  <OutArgument x:TypeArguments="si:FileInfo">[inputFile]</OutArgument>
+                </Assign.To>
+                <Assign.Value>
+                  <InArgument x:TypeArguments="si:FileInfo">[new FileInfo(in_FileName)]</InArgument>
+                </Assign.Value>
+              </Assign>
+              <Delay sap2010:Annotation.AnnotationText="With out a delay Pick Branch Doesn't move to the next branch while in loop( To Set up Round Robin )" Duration="00:00:02" sap:VirtualizedContainerService.HintSize="334,100.666666666667" sap2010:WorkflowViewState.IdRef="Delay_3">
+                <sap:WorkflowViewStateService.ViewState>
+                  <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                    <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+                  </scg:Dictionary>
+                </sap:WorkflowViewStateService.ViewState>
+              </Delay>
+            </Sequence>
+          </DoWhile>
+        </PickBranch.Trigger>
+        <Assign DisplayName="Set Download Status to True" sap:VirtualizedContainerService.HintSize="262,62" sap2010:WorkflowViewState.IdRef="Assign_4">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Boolean">[out_DownloadStatusFlag]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Boolean">True</InArgument>
+          </Assign.Value>
+        </Assign>
+      </PickBranch>
+      <PickBranch DisplayName="Branch - To Track Part File Download" sap:VirtualizedContainerService.HintSize="200,52.6666666666667" sap2010:WorkflowViewState.IdRef="PickBranch_2">
+        <sap:WorkflowViewStateService.ViewState>
+          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+            <x:Boolean x:Key="IsExpanded">False</x:Boolean>
+            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+          </scg:Dictionary>
+        </sap:WorkflowViewStateService.ViewState>
+        <PickBranch.Trigger>
+          <DoWhile DisplayName="Do While to monitor download growth of Part File" sap:VirtualizedContainerService.HintSize="484,699.333333333333" sap2010:WorkflowViewState.IdRef="DoWhile_1">
+            <sap:WorkflowViewStateService.ViewState>
+              <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                <x:Boolean x:Key="IsPinned">False</x:Boolean>
+              </scg:Dictionary>
+            </sap:WorkflowViewStateService.ViewState>
+            <DoWhile.Condition>[inProgramTimer.Elapsed.TotalSeconds&lt;in_MaxWaitingSeconds]</DoWhile.Condition>
+            <TryCatch DisplayName="Try Catch to return length of part file to Zero when it disappers" sap:VirtualizedContainerService.HintSize="434,531.333333333333" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+              <sap:WorkflowViewStateService.ViewState>
+                <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                  <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                  <x:Boolean x:Key="IsPinned">False</x:Boolean>
+                </scg:Dictionary>
+              </sap:WorkflowViewStateService.ViewState>
+              <TryCatch.Try>
+                <Sequence DisplayName="Monitor the File Size Growth of Part File" sap:VirtualizedContainerService.HintSize="1269.33333333333,1946.66666666667" sap2010:WorkflowViewState.IdRef="Sequence_2">
+                  <sap:WorkflowViewStateService.ViewState>
+                    <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                      <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                      <x:Boolean x:Key="IsPinned">False</x:Boolean>
+                    </scg:Dictionary>
+                  </sap:WorkflowViewStateService.ViewState>
+                  <ui:LogMessage DisplayName="Trace Log Indicating Start of Branch" sap:VirtualizedContainerService.HintSize="1227.33333333333,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_10" Level="Trace" Message="[&quot;Checking Part File&quot;]" />
+                  <Assign DisplayName="Refresh Main File" sap:VirtualizedContainerService.HintSize="1227.33333333333,62" sap2010:WorkflowViewState.IdRef="Assign_9">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="si:FileInfo">[inputFile]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="si:FileInfo">[new FileInfo(in_FileName)]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                  <Assign DisplayName="Refresh Part File" sap:VirtualizedContainerService.HintSize="1227.33333333333,62" sap2010:WorkflowViewState.IdRef="Assign_10">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="si:FileInfo">[inputPartFile]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="si:FileInfo">[new FileInfo(in_FileName+".part")]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                  <If sap2010:Annotation.AnnotationText="Save a copy only if the values are not equal. This extra condition to prevent parallel copies of file sizes per each checking.  Eg: Just to prevent the illusion of no movement even when two trains travel at same speed." Condition="[prevLengthOfPartFile&lt;&gt;lengthOfPartFile]" DisplayName="Save a Copy of Current File Size into a temp Variable" sap:VirtualizedContainerService.HintSize="1227.33333333333,308.666666666667" sap2010:WorkflowViewState.IdRef="If_4">
+                    <sap:WorkflowViewStateService.ViewState>
+                      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                        <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+                      </scg:Dictionary>
+                    </sap:WorkflowViewStateService.ViewState>
+                    <If.Then>
+                      <Assign sap2010:Annotation.AnnotationText="To Compare the code for next Iteration" DisplayName="Save a Copy of Current value" sap:VirtualizedContainerService.HintSize="262,92.6666666666667" sap2010:WorkflowViewState.IdRef="Assign_5">
+                        <Assign.To>
+                          <OutArgument x:TypeArguments="x:Double">[prevLengthOfPartFile]</OutArgument>
+                        </Assign.To>
+                        <Assign.Value>
+                          <InArgument x:TypeArguments="x:Double">[lengthOfPartFile]</InArgument>
+                        </Assign.Value>
+                        <sap:WorkflowViewStateService.ViewState>
+                          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                            <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+                          </scg:Dictionary>
+                        </sap:WorkflowViewStateService.ViewState>
+                      </Assign>
+                    </If.Then>
+                  </If>
+                  <Delay sap2010:Annotation.AnnotationText="To Create a Round Robin Execution - Now control Moves to Next Branch" Duration="00:00:02" sap:VirtualizedContainerService.HintSize="1227.33333333333,84" sap2010:WorkflowViewState.IdRef="Delay_2">
+                    <sap:WorkflowViewStateService.ViewState>
+                      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                        <x:Boolean x:Key="IsAnnotationDocked">True</x:Boolean>
+                      </scg:Dictionary>
+                    </sap:WorkflowViewStateService.ViewState>
+                  </Delay>
+                  <Assign DisplayName="Size of the Part File" sap:VirtualizedContainerService.HintSize="1227.33333333333,62" sap2010:WorkflowViewState.IdRef="Assign_6">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="x:Double">[lengthOfPartFile]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="x:Double">[CDbl(inputPartFile.Length/1000000)]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                  <If Condition="[lengthOfPartFile&gt;prevLengthOfPartFile]" DisplayName="Condition to Verify the File Size Difference between Iterations/Time" sap:VirtualizedContainerService.HintSize="1227.33333333333,941.333333333333" sap2010:WorkflowViewState.IdRef="If_2">
+                    <sap:WorkflowViewStateService.ViewState>
+                      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                        <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                        <x:Boolean x:Key="IsPinned">False</x:Boolean>
+                      </scg:Dictionary>
+                    </sap:WorkflowViewStateService.ViewState>
+                    <If.Then>
+                      <If Condition="[inProgramTimer.Elapsed.TotalSeconds&gt;0]" DisplayName="Conditions to Verify if the Stop Watch is running" sap:VirtualizedContainerService.HintSize="522,787.333333333333" sap2010:WorkflowViewState.IdRef="If_1">
+                        <sap:WorkflowViewStateService.ViewState>
+                          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                            <x:Boolean x:Key="IsPinned">False</x:Boolean>
+                          </scg:Dictionary>
+                        </sap:WorkflowViewStateService.ViewState>
+                        <If.Then>
+                          <Sequence DisplayName="Reset Stop Watch" sap:VirtualizedContainerService.HintSize="376,633.333333333333" sap2010:WorkflowViewState.IdRef="Sequence_5">
+                            <sap:WorkflowViewStateService.ViewState>
+                              <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                                <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                              </scg:Dictionary>
+                            </sap:WorkflowViewStateService.ViewState>
+                            <InvokeMethod DisplayName="Reset the Stop Watch Since there is change in File Size" sap:VirtualizedContainerService.HintSize="334,137.333333333333" sap2010:WorkflowViewState.IdRef="InvokeMethod_1" MethodName="Reset">
+                              <InvokeMethod.TargetObject>
+                                <InArgument x:TypeArguments="sd:Stopwatch">[inProgramTimer]</InArgument>
+                              </InvokeMethod.TargetObject>
+                            </InvokeMethod>
+                            <ui:LogMessage DisplayName="Trace log with Temoprary Values - Previous Iterations' Value" sap:VirtualizedContainerService.HintSize="334,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_17" Level="Trace" Message="[&quot;Prev : &quot;+ prevLengthOfPartFile.ToString]" />
+                            <ui:LogMessage DisplayName="Trace log with Value from Current Iteration" sap:VirtualizedContainerService.HintSize="334,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_18" Level="Trace" Message="[&quot;Current : &quot;+lengthOfPartFile.ToString]" />
+                            <ui:LogMessage DisplayName="Trace Log Indicating Timer Reset" sap:VirtualizedContainerService.HintSize="334,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_12" Level="Trace" Message="[&quot;Timer Reset&quot;]" />
+                          </Sequence>
+                        </If.Then>
+                      </If>
+                    </If.Then>
+                    <If.Else>
+                      <Sequence sap:VirtualizedContainerService.HintSize="659.333333333333,652.666666666667" sap2010:WorkflowViewState.IdRef="Sequence_6">
+                        <sap:WorkflowViewStateService.ViewState>
+                          <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                            <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                          </scg:Dictionary>
+                        </sap:WorkflowViewStateService.ViewState>
+                        <If Condition="[inProgramTimer.Elapsed.TotalSeconds&gt;0]" sap:VirtualizedContainerService.HintSize="617.333333333333,291.333333333333" sap2010:WorkflowViewState.IdRef="If_3">
+                          <If.Then>
+                            <ui:LogMessage DisplayName="Trace Log Indicating Start of the Stop Watch" sap:VirtualizedContainerService.HintSize="334,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_13" Level="Trace" Message="[&quot;Timer Started : &quot;+inProgramTimer.Elapsed.TotalSeconds.ToString]" />
+                          </If.Then>
+                          <If.Else>
+                            <InvokeMethod DisplayName="Start the Stop Watch" sap:VirtualizedContainerService.HintSize="237.333333333333,137.333333333333" sap2010:WorkflowViewState.IdRef="InvokeMethod_2" MethodName="Start">
+                              <InvokeMethod.TargetObject>
+                                <InArgument x:TypeArguments="sd:Stopwatch">[inProgramTimer]</InArgument>
+                              </InvokeMethod.TargetObject>
+                            </InvokeMethod>
+                          </If.Else>
+                        </If>
+                        <ui:LogMessage DisplayName="Trace Log to Track Previous Iterations Value" sap:VirtualizedContainerService.HintSize="617.333333333333,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_14" Level="Trace" Message="[&quot;Prev : &quot;+ prevLengthOfPartFile.ToString]" />
+                        <ui:LogMessage DisplayName="Trace Log with Current File Size" sap:VirtualizedContainerService.HintSize="617.333333333333,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_15" Level="Trace" Message="[&quot;Current : &quot;+lengthOfPartFile.ToString]" />
+                      </Sequence>
+                    </If.Else>
+                  </If>
+                </Sequence>
+              </TryCatch.Try>
+              <TryCatch.Catches>
+                <Catch x:TypeArguments="s:Exception" sap:VirtualizedContainerService.HintSize="400,359.333333333333" sap2010:WorkflowViewState.IdRef="Catch`1_1">
+                  <sap:WorkflowViewStateService.ViewState>
+                    <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                      <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                      <x:Boolean x:Key="IsPinned">False</x:Boolean>
+                    </scg:Dictionary>
+                  </sap:WorkflowViewStateService.ViewState>
+                  <ActivityAction x:TypeArguments="s:Exception">
+                    <ActivityAction.Argument>
+                      <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+                    </ActivityAction.Argument>
+                    <Sequence DisplayName="Set Part File Size to Zero" sap:VirtualizedContainerService.HintSize="376,288.666666666667" sap2010:WorkflowViewState.IdRef="Sequence_3">
+                      <sap:WorkflowViewStateService.ViewState>
+                        <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                          <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                        </scg:Dictionary>
+                      </sap:WorkflowViewStateService.ViewState>
+                      <Assign DisplayName="Set File Size of Part File to Zero when it is not available - At the End" sap:VirtualizedContainerService.HintSize="334,62" sap2010:WorkflowViewState.IdRef="Assign_7">
+                        <Assign.To>
+                          <OutArgument x:TypeArguments="x:Double">[lengthOfPartFile]</OutArgument>
+                        </Assign.To>
+                        <Assign.Value>
+                          <InArgument x:TypeArguments="x:Double">0</InArgument>
+                        </Assign.Value>
+                      </Assign>
+                      <ui:LogMessage DisplayName="Error Message" sap:VirtualizedContainerService.HintSize="334,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_9" Level="Error" Message="[exception.ToString]" />
+                    </Sequence>
+                  </ActivityAction>
+                </Catch>
+              </TryCatch.Catches>
+            </TryCatch>
+          </DoWhile>
+        </PickBranch.Trigger>
+        <Assign DisplayName="Set Download Status to False" sap:VirtualizedContainerService.HintSize="262,62" sap2010:WorkflowViewState.IdRef="Assign_8">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Boolean">[out_DownloadStatusFlag]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Boolean">False</InArgument>
+          </Assign.Value>
+        </Assign>
+      </PickBranch>
+    </Pick>
+    <ui:LogMessage DisplayName="Log Message to Print Final Status" sap:VirtualizedContainerService.HintSize="574,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_6" Level="Info" Message="[&quot;Download Status is &quot; +out_DownloadStatusFlag.ToString]" />
+    <ui:LogMessage DisplayName="Info Log to Indicate End of Module" sap:VirtualizedContainerService.HintSize="574,94.6666666666667" sap2010:WorkflowViewState.IdRef="LogMessage_21" Level="Info" Message="[&quot;The Module Validate Zip File Ended&quot;]" />
+  </Sequence>
+</Activity>
